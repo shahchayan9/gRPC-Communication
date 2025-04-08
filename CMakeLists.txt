@@ -4,12 +4,30 @@ project(Mini2Project)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find required packages
-find_package(Protobuf REQUIRED)
-find_package(gRPC REQUIRED)
-
-# Include protobuf directories
-include_directories(${Protobuf_INCLUDE_DIRS})
+# For macOS, explicitly set library paths
+if(APPLE)
+    # Set path to Homebrew libraries
+    include_directories(/opt/homebrew/include)
+    link_directories(/opt/homebrew/lib)
+    
+    # Define libraries directly
+    set(PROTOBUF_LIBRARIES protobuf)
+    set(GRPC_LIBRARIES grpc++ grpc)
+    
+    # Create imported targets to mimic find_package behavior
+    add_library(grpc++ SHARED IMPORTED)
+    set_target_properties(grpc++ PROPERTIES IMPORTED_LOCATION "/opt/homebrew/lib/libgrpc++.dylib")
+    
+    add_library(grpc SHARED IMPORTED)
+    set_target_properties(grpc PROPERTIES IMPORTED_LOCATION "/opt/homebrew/lib/libgrpc.dylib")
+    
+    # Create namespace alias for gRPC::grpc++
+    add_library(gRPC::grpc++ ALIAS grpc++)
+else()
+    # For non-macOS systems, use standard find_package
+    find_package(Protobuf REQUIRED)
+    find_package(gRPC CONFIG REQUIRED)
+endif()
 
 # Generate protobuf code
 set(PROTO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/proto)
@@ -19,7 +37,7 @@ file(MAKE_DIRECTORY ${PROTO_GENERATED_DIR})
 # Compile proto files
 set(PROTO_FILES ${PROTO_SRC_DIR}/data_service.proto)
 
-# Generate C++ code from proto
+# Add custom command to generate C++ code from proto
 add_custom_command(
     OUTPUT 
         ${PROTO_GENERATED_DIR}/data_service.pb.cc
