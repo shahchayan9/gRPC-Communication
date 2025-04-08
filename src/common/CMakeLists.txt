@@ -11,11 +11,19 @@ target_include_directories(mini2_common PUBLIC
     ${PROTO_GENERATED_DIR}
 )
 
+# Platform-specific libraries
+if(UNIX AND NOT APPLE)
+    # Linux
+    set(PLATFORM_LIBS pthread rt)
+else()
+    # macOS or other platforms
+    set(PLATFORM_LIBS pthread)
+endif()
+
 # Link with system libraries and protobuf/gRPC
 target_link_libraries(mini2_common
-    pthread
-    rt  # For shared memory
-    ${Protobuf_LIBRARIES}
+    ${PLATFORM_LIBS}
     proto_lib
-    grpc++
+    ${Protobuf_LIBRARIES}
+    /opt/homebrew/lib/libgrpc++.dylib
 )
