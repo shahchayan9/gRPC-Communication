@@ -14,6 +14,11 @@ cd $BUILD_DIR
 cmake ..
 
 # Build the project
-make -j$(nproc)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS doesn't have nproc
+    make -j$(sysctl -n hw.ncpu)
+else
+    make -j$(nproc)
+fi
 
 echo "Build completed successfully"

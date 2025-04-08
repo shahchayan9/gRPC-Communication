@@ -6,10 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
 find_package(Protobuf REQUIRED)
-find_package(gRPC REQUIRED)
-
-# Include protobuf directories
 include_directories(${Protobuf_INCLUDE_DIRS})
+
+# Set up gRPC paths - macOS specific with Homebrew
+set(GRPC_INCLUDE_DIR "/opt/homebrew/include")
+set(GRPC_LIB_DIR "/opt/homebrew/lib")
+include_directories(${GRPC_INCLUDE_DIR})
+link_directories(${GRPC_LIB_DIR})
 
 # Generate protobuf code
 set(PROTO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/proto)
@@ -35,6 +38,14 @@ add_custom_command(
     DEPENDS ${PROTO_FILES}
 )
 
+# Create a library for generated protobuf code
+add_library(proto_lib
+    ${PROTO_GENERATED_DIR}/data_service.pb.cc
+    ${PROTO_GENERATED_DIR}/data_service.grpc.pb.cc
+)
+target_link_libraries(proto_lib ${Protobuf_LIBRARIES})
+target_include_directories(proto_lib PUBLIC ${PROTO_GENERATED_DIR})
+
 # Include generated directories
 include_directories(${PROTO_GENERATED_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/common)
@@ -46,3 +57,20 @@ add_subdirectory(src/process_c)
 add_subdirectory(src/process_d)
 add_subdirectory(src/process_e)
 add_subdirectory(src/common)
+
+# Remove linking with rt on macOS
+if(APPLE)
+    foreach(target process_a process_b process_c process_d process_e)
+        set_target_properties(${target} PROPERTIES
+            LINK_FLAGS "-Wl,-undefined,dynamic_lookup"
+        )
+    endforeach()
+endif()
+
+if(APPLE)
+    foreach(target process_a process_b process_c process_d process_e)
+        get_target_property(old_flags ${target} LINK_LIBRARIES)
+        string(REPLACE "rt" "" new_flags "${old_flags}")
+        set_target_properties(${target} PROPERTIES LINK_LIBRARIES "${new_flags}")
+    endforeach()
+endif()
