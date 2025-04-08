@@ -1,0 +1,38 @@
+{
+  "processes": {
+    "A": {
+      "host": "169.254.246.156",
+      "port": 50051,
+      "connections": ["B"],
+      "data_subset": "subset_a"
+    },
+    "B": {
+      "host": "169.254.246.156",
+      "port": 50052,
+      "connections": ["C", "D"],
+      "data_subset": "subset_b"
+    },
+    "C": {
+      "host": "169.254.215.217",
+      "port": 50053,
+      "connections": ["E"],
+      "data_subset": "subset_c"
+    },
+    "D": {
+      "host": "169.254.215.217",
+      "port": 50054,
+      "connections": ["E"],
+      "data_subset": "subset_d"
+    },
+    "E": {
+      "host": "192.168.1.103",
+      "port": 50055,
+      "connections": [],
+      "data_subset": "subset_e"
+    }
+  },
+  "overlay": ["AB", "BC", "BD", "CE", "DE"]
+}
+
+// Chayan - 169.254.246.156
+// Ankit - 169.254.215.217

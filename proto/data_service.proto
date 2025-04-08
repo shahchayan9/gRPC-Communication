@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package dataservice;
+
+// Service definition
+service DataService {
+  // Request-response method
+  rpc QueryData (QueryRequest) returns (QueryResponse) {}
+  
+  // One-way message
+  rpc SendData (DataMessage) returns (Empty) {}
+  
+  // Streaming response
+  rpc StreamData (QueryRequest) returns (stream DataChunk) {}
+}
+
+// Message definitions
+message QueryRequest {
+  string query_id = 1;
+  string query_string = 2;
+  repeated string parameters = 3;
+}
+
+message QueryResponse {
+  string query_id = 1;
+  bool success = 2;
+  string message = 3;
+  repeated DataEntry results = 4;
+}
+
+message DataMessage {
+  string message_id = 1;
+  string source = 2;
+  string destination = 3;
+  bytes data = 4;
+}
+
+message DataChunk {
+  string chunk_id = 1;
+  bytes data = 2;
+  bool is_last = 3;
+}
+
+message DataEntry {
+  string key = 1;
+  oneof value {
+    string string_value = 2;
+    int32 int_value = 3;
+    double double_value = 4;
+    bool bool_value = 5;
+  }
+}
+
+message Empty {}
