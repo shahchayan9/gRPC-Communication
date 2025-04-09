@@ -39,8 +39,12 @@ private:
 // Shared memory segment class
 class SharedMemorySegment {
 public:
+    SharedMemorySegment();
     SharedMemorySegment(const std::string& name, size_t size, bool create);
     ~SharedMemorySegment();
+    
+    // Initialize with regular memory if shared memory fails
+    void initializeWithRegularMemory(const std::string& name, size_t size);
     
     // Get raw pointer to the shared memory
     void* getPtr() const { return ptr_; }
@@ -68,6 +72,8 @@ private:
     size_t size_;
     int fd_;
     void* ptr_;
+    bool using_regular_memory_;
+    
     struct SharedHeader {
         std::mutex mutex;
     };

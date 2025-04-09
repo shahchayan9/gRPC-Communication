@@ -1,13 +1,13 @@
 {
   "processes": {
     "A": {
-      "host": "169.254.187.135",
+      "host": "169.254.159.239",
       "port": 50051,
       "connections": ["B"],
       "data_subset": "subset_a"
     },
     "B": {
-      "host": "169.254.187.135",
+      "host": "169.254.159.239",
       "port": 50052,
       "connections": ["C", "D"],
       "data_subset": "subset_b"

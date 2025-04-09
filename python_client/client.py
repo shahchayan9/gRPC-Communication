@@ -7,6 +7,11 @@ import grpc
 import argparse
 from typing import List, Dict, Any, Optional
 
+# Adjust the path to find the generated modules
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/..'))
+
 # Import generated Protocol Buffer code
 from python_client.generated import data_service_pb2
 from python_client.generated import data_service_pb2_grpc
