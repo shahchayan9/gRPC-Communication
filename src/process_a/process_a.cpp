@@ -252,12 +252,26 @@ private:
     }
     
     QueryResult handleQuery(const Query& query) {
-        std::cout << "Received query: " << query.query_string << std::endl;
+        std::cout << "Received query: " << query.query_string;
+        if (!query.parameters.empty()) {
+            std::cout << " with parameters: ";
+            for (const auto& param : query.parameters) {
+                std::cout << param << " ";
+            }
+        }
+        std::cout << std::endl;
+        
+        // Generate cache key based on query and parameters
+        std::string cache_key = query.query_string;
+        for (const auto& param : query.parameters) {
+            cache_key += "_" + param;
+        }
         
         // Check cache first
         QueryResult cached_result;
-        if (query_cache_.get(query.id, cached_result)) {
-            std::cout << "Cache hit for query " << query.id << std::endl;
+        if (query_cache_.get(cache_key, cached_result)) {
+            std::cout << "Cache hit for query " << cache_key << std::endl;
+            cached_result.message = "From cache: " + cached_result.message;
             return cached_result;
         }
         
@@ -277,16 +291,20 @@ private:
         QueryResult final_result;
         final_result.query_id = query.id;
         final_result.success = true;
-        final_result.message = "Success";
+        final_result.message = "Combined results from " + std::to_string(downstream_results.size()) + " sources";
         
+        int total_entries = 0;
         for (const auto& result : downstream_results) {
             final_result.results.insert(final_result.results.end(),
                                       result.results.begin(),
                                       result.results.end());
+            total_entries += result.results.size();
         }
         
+        final_result.message += " (" + std::to_string(total_entries) + " total entries)";
+        
         // Cache result
-        query_cache_.put(query.id, final_result);
+        query_cache_.put(cache_key, final_result);
         
         return final_result;
     }
