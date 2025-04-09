@@ -6,10 +6,20 @@ import time
 import grpc
 import argparse
 from typing import List, Dict, Any, Optional
+import os
+
+# Add the current directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 # Import generated Protocol Buffer code
-from python_client.generated import data_service_pb2
-from python_client.generated import data_service_pb2_grpc
+try:
+    from python_client.generated import data_service_pb2
+    from python_client.generated import data_service_pb2_grpc
+except ModuleNotFoundError:
+    # Alternative import path
+    sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+    from generated import data_service_pb2
+    from generated import data_service_pb2_grpc
 
 class CrashDataClient:
     """
