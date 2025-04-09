@@ -1,31 +1,31 @@
 {
   "processes": {
     "A": {
-      "host": "169.254.159.239",
+      "host": "169.254.181.125",
       "port": 50051,
       "connections": ["B"],
       "data_subset": "subset_a"
     },
     "B": {
-      "host": "169.254.159.239",
+      "host": "169.254.181.125",
       "port": 50052,
       "connections": ["C", "D"],
       "data_subset": "subset_b"
     },
     "C": {
-      "host": "169.254.102.105",
+      "host": "169.254.106.40",
       "port": 50053,
       "connections": ["E"],
       "data_subset": "subset_c"
     },
     "D": {
-      "host": "169.254.102.105",
+      "host": "1169.254.106.40",
       "port": 50054,
       "connections": ["E"],
       "data_subset": "subset_d"
     },
     "E": {
-      "host": "169.254.102.105",
+      "host": "169.254.106.40",
       "port": 50055,
       "connections": [],
       "data_subset": "subset_e"
