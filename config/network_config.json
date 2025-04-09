@@ -19,7 +19,7 @@
       "data_subset": "subset_c"
     },
     "D": {
-      "host": "1169.254.106.40",
+      "host": "169.254.106.40",
       "port": 50054,
       "connections": ["E"],
       "data_subset": "subset_d"
