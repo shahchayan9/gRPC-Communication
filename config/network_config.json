@@ -13,19 +13,19 @@
       "data_subset": "subset_b"
     },
     "C": {
-      "host": "169.254.151.167",
+      "host": "169.254.102.105",
       "port": 50053,
       "connections": ["E"],
       "data_subset": "subset_c"
     },
     "D": {
-      "host": "169.254.151.167",
+      "host": "169.254.102.105",
       "port": 50054,
       "connections": ["E"],
       "data_subset": "subset_d"
     },
     "E": {
-      "host": "169.254.151.167",
+      "host": "169.254.102.105",
       "port": 50055,
       "connections": [],
       "data_subset": "subset_e"
