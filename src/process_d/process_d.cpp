@@ -230,7 +230,8 @@ private:
         else if (query.query_string == "get_by_street" || 
                 query.query_string == "get_by_date_range" ||
                 query.query_string == "get_crashes_with_injuries" ||
-                query.query_string == "get_crashes_with_fatalities") {
+                query.query_string == "get_crashes_with_fatalities" || 
+                query.query_string == "get_by_time") {
             // Process these special queries locally
             local_result = data_store_->processQuery(query);
         }
@@ -308,7 +309,8 @@ private:
                query.query_string == "get_by_prefix" ||
                query.query_string == "get_by_date_range" ||
                query.query_string == "get_crashes_with_injuries" ||
-               query.query_string == "get_crashes_with_fatalities";
+               query.query_string == "get_crashes_with_fatalities" ||
+               query.query_string == "get_by_time" ;
     }
     
     void handleData(const std::string& source, 
