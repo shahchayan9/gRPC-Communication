@@ -7,23 +7,57 @@ import time
 import grpc
 import argparse
 
-# Add the current directory to the path
+# Set up paths to find the generated protocol buffer modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-sys.path.append(os.path.join(current_dir, 'generated'))
+project_root = os.path.dirname(current_dir)
+generated_dir = os.path.join(current_dir, 'generated')
 
-# Import directly from the generated files in the same directory
+sys.path.insert(0, project_root)
+sys.path.insert(0, current_dir)
+sys.path.insert(0, generated_dir)
+
+# Try multiple import approaches to handle different directory structures
 try:
-    import generated.data_service_pb2 as data_service_pb2
-    import generated.data_service_pb2_grpc as data_service_pb2_grpc
+    # Direct import from generated directory
+    sys.path.insert(0, os.path.join(current_dir, 'generated'))
+    from generated import data_service_pb2
+    from generated import data_service_pb2_grpc
+    print("Imported protocol buffers from local generated directory")
 except ImportError:
     try:
+        # Import with python_client prefix
         from python_client.generated import data_service_pb2
         from python_client.generated import data_service_pb2_grpc
+        print("Imported protocol buffers with python_client prefix")
     except ImportError:
-        print("Error: Unable to import the generated Protocol Buffer files.")
-        print("Please run the script from the project root directory.")
-        sys.exit(1)
+        try:
+            # Try absolute imports
+            import data_service_pb2
+            import data_service_pb2_grpc
+            print("Imported protocol buffers directly")
+        except ImportError:
+            print("Error: Unable to import the Protocol Buffer files.")
+            print("Current directory:", os.getcwd())
+            print("Python path:", sys.path)
+            print("Looking for files in:", generated_dir)
+            
+            # Check if the files exist
+            pb2_path = os.path.join(generated_dir, 'data_service_pb2.py')
+            grpc_path = os.path.join(generated_dir, 'data_service_pb2_grpc.py')
+            
+            if os.path.exists(pb2_path):
+                print(f"data_service_pb2.py exists at {pb2_path}")
+            else:
+                print(f"data_service_pb2.py NOT FOUND at {pb2_path}")
+                
+            if os.path.exists(grpc_path):
+                print(f"data_service_pb2_grpc.py exists at {grpc_path}")
+            else:
+                print(f"data_service_pb2_grpc.py NOT FOUND at {grpc_path}")
+                
+            print("\nPlease regenerate the protocol buffer files with:")
+            print("./scripts/generate_python_proto_fixed.sh")
+            sys.exit(1)
 
 def query_crashes_by_time(server_address, crash_time):
     """
@@ -61,6 +95,13 @@ def query_crashes_by_time(server_address, crash_time):
             if value_type == 'string_value':
                 result['value'] = entry.string_value
                 result['type'] = 'string'
+                
+                # Try to parse CrashData from string if it contains "Date:", "Time:", etc.
+                if "Date:" in entry.string_value and "Time:" in entry.string_value:
+                    result['type'] = 'crash_data'
+                    # Extract the time if present
+                    time_part = entry.string_value.split("Time:")[1].split(",")[0].strip() if "Time:" in entry.string_value else "Unknown"
+                    result['crash_time'] = time_part
             elif value_type == 'int_value':
                 result['value'] = entry.int_value
                 result['type'] = 'int'
@@ -80,7 +121,7 @@ def query_crashes_by_time(server_address, crash_time):
             'message': response.message,
             'execution_time': f"{(end_time - start_time):.3f} seconds",
             'result_count': len(results),
-            'results': results[:20]  # Only show first 20 results
+            'results': results[:30]  # Only show first 20 results
         }
         
     except grpc.RpcError as e:
@@ -105,6 +146,21 @@ def main():
     
     # Print result
     print(json.dumps(result, indent=2))
+    
+    # Also print a summary of actual crash data entries
+    crash_data_entries = [r for r in result.get('results', []) if r.get('type') == 'crash_data']
+    print(f"\nFound {len(crash_data_entries)} actual crash records (out of {result.get('result_count', 0)} total entries)")
+    
+    # Show number of entries with each time
+    if crash_data_entries:
+        time_counts = {}
+        for entry in crash_data_entries:
+            crash_time = entry.get('crash_time', 'Unknown')
+            time_counts[crash_time] = time_counts.get(crash_time, 0) + 1
+        
+        print("\nTime breakdown:")
+        for time_val, num_entries in sorted(time_counts.items()):
+            print(f"  Time {time_val}: {num_entries} entries")
 
 if __name__ == '__main__':
     main()
