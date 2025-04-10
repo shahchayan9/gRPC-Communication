@@ -36,7 +36,7 @@ public:
            data_store_->loadCrashDataFromCSV(data_file);
        } else {
            // Load default data paths if they exist
-           std::string staten_island_path = "data/process_e/staten_island_crashes.csv";
+           std::string staten_island_path = "data/process_e/process4.csv";
            std::string other_path = "data/process_e/other_crashes.csv";
            
            bool loaded_files = false;

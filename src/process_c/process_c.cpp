@@ -36,7 +36,7 @@ public:
             data_store_->loadCrashDataFromCSV(data_file);
         } else {
             // Load default data path if exists
-            std::string default_path = "data/process_c/queens_crashes.csv";
+            std::string default_path = "data/process_c/process2.csv";
             std::ifstream test_file(default_path);
             if (test_file.good()) {
                 test_file.close();
