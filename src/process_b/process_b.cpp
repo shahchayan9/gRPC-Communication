@@ -10,6 +10,7 @@
 #include "data/data_structures.h"
 #include "grpc/data_service.h"
 #include "shared_memory/shared_memory.h"
+#include "timing/timing.h"
 
 using namespace mini2;
 
@@ -156,10 +157,17 @@ private:
         std::cout << "Process B received query: " << query.query_string;
         if (!query.parameters.empty()) {
             std::cout << " with parameters: ";
-            for (const auto& param : query.parameters) {
-                std::cout << param << " ";
+            for (size_t i = 0; i < query.parameters.size(); ++i) {
+                std::cout << query.parameters[i];
+                if (i < query.parameters.size() - 1) {
+                    std::cout << ", ";
+                }
             }
         }
+        
+        // Start timing for this query
+        QueryTimer::getInstance().startTiming(query.id, "B");
+        
         std::cout << std::endl;
         
         // Check cache first
@@ -171,9 +179,17 @@ private:
         std::vector<uint8_t> cached_data;
         
         if (cache_->get(cache_key, cached_data)) {
+            
             // Deserialize from cache
             std::string cache_str(cached_data.begin(), cached_data.end());
             QueryResult cached_result;
+            
+            // Record cache hit timing
+            QueryTimer::getInstance().endTiming(query.id, "Cache_Access");
+            QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+            
+            // Add timing data to cached result
+            cached_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
             cached_result.query_id = query.id;
             cached_result.success = true;
             cached_result.message = "From cache";
@@ -216,12 +232,17 @@ private:
         
         // Process the query locally
         QueryResult local_result;
+
+        // Start local processing timing
+        QueryTimer::getInstance().startTiming(query.id, "Local_Processing");
         
         // Process specific queries for crash data
         if (query.query_string == "get_by_borough") {
             if (!query.parameters.empty() && query.parameters[0] == "BROOKLYN") {
                 // This is our borough, process locally
                 local_result = data_store_->getByBorough("BROOKLYN");
+                // Record local processing time
+                QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
             } else {
                 // Not our borough, return empty result
                 local_result = QueryResult::createSuccess(query.id, {}, "No BROOKLYN data requested");
@@ -234,21 +255,36 @@ private:
                 query.query_string == "get_by_time") {
             // Process these special queries locally
             local_result = data_store_->processQuery(query);
+            // Record local processing time
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
         }
         else {
             // Standard queries like get_all, get_by_key, get_by_prefix
             local_result = data_store_->processQuery(query);
+            // Record local processing time
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
         }
         
         // Forward to other servers if needed (except for borough-specific queries)
         if (query.query_string != "get_by_borough" && 
             (query.query_string == "get_all" || shouldForwardQuery(query))) {
             
+            // Start downstream query timing
+            QueryTimer::getInstance().startTiming(query.id, "Downstream_Queries");
+
             std::vector<QueryResult> downstream_results;
             
             for (const auto& [conn_id, client] : clients_) {
                 if (client->isConnected()) {
+                    std::cout << "connected. ";
+                    // Record timing for this specific downstream query
+                    QueryTimer::getInstance().startTiming(query.id, "Query_To_" + conn_id);
+
                     auto downstream_result = client->queryData(query);
+                    
+                    QueryTimer::getInstance().endTiming(query.id, "Query_To_" + conn_id);
+                    std::cout << "Got response. Success: " << (downstream_result.success ? "true" : "false")
+                             << ", Results: " << downstream_result.results.size() << std::endl;
                     if (downstream_result.success) {
                         downstream_results.push_back(downstream_result);
                     }
@@ -260,14 +296,25 @@ private:
                 local_result.results.insert(local_result.results.end(),
                                          result.results.begin(),
                                          result.results.end());
+                 // Add downstream timing data
+                if (!result.timing_data.empty()) {
+                    QueryTimer::getInstance().addDownstreamTiming(query.id, result.timing_data);
+                }
             }
             
             // Update message
             local_result.message = "Combined results from Process B and " + 
                                   std::to_string(downstream_results.size()) + " downstream processes";
+            // End downstream query timing
+            QueryTimer::getInstance().endTiming(query.id, "Downstream_Queries");
         }
         
         // Cache the result
+        QueryTimer::getInstance().startTiming(query.id, "Cache_Storage");
+        
+        // End total processing timing
+        QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+       
         if (local_result.success) {
             // Serialize to cache
             std::ostringstream oss;
@@ -298,7 +345,12 @@ private:
             // Cache for 5 seconds
             cache_->put(cache_key, cache_data, 5000);
         }
+        QueryTimer::getInstance().endTiming(query.id, "Cache_Storage");
         
+        // Add timing data to result
+        local_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
+        
+      
         return local_result;
     }
     

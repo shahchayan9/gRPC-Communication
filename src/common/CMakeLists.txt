@@ -3,6 +3,7 @@ add_library(mini2_common
     shared_memory/shared_memory.cpp
     config/config_loader.cpp
     data/data_structures.cpp
+    timing/timing.cpp
     grpc/data_service.cpp
 )
 

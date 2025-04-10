@@ -1,5 +1,7 @@
 #include "data_service.h"
 #include <iostream>
+#include <iomanip>
+#include "timing/timing.h"
 
 namespace mini2 {
 
@@ -17,6 +19,14 @@ DataServiceClient::~DataServiceClient() {
 QueryResult DataServiceClient::queryData(const Query& query) {
     // Create request
     dataservice::QueryRequest request;
+    
+    // Start timing for this query
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    // Initialize query timer
+    auto& timer = QueryTimer::getInstance();
+    timer.startTiming(query.id, "Client");
+    
     request.set_query_id(query.id);
     request.set_query_string(query.query_string);
     
@@ -28,6 +38,9 @@ QueryResult DataServiceClient::queryData(const Query& query) {
     dataservice::QueryResponse response;
     grpc::ClientContext context;
     
+    // Timing the gRPC call
+    timer.startTiming(query.id, "gRPC_Call");
+    
     grpc::Status status = stub_->QueryData(&context, request, &response);
     
     // Process response
@@ -36,6 +49,11 @@ QueryResult DataServiceClient::queryData(const Query& query) {
         result.query_id = response.query_id();
         result.success = response.success();
         result.message = response.message();
+        
+        // Store the timing data
+        timer.endTiming(query.id, "gRPC_Call");
+        result.timing_data = response.timing_data();
+        timer.addDownstreamTiming(query.id, result.timing_data);
         
         for (const auto& grpc_entry : response.results()) {
             DataEntry entry;
@@ -62,6 +80,8 @@ QueryResult DataServiceClient::queryData(const Query& query) {
             
             result.results.push_back(entry);
         }
+        
+        timer.endTiming(query.id, "Total");
         
         return result;
     } else {
@@ -213,6 +233,9 @@ grpc::Status DataServiceImpl::QueryData(grpc::ServerContext* context,
     
     // Process the query
     QueryResult result = query_handler_(query);
+
+    // Add process timing data
+    result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
     
     // Convert result to gRPC response
     convertToGrpc(result, response);
@@ -308,6 +331,9 @@ void DataServiceImpl::convertToGrpc(const QueryResult& result, dataservice::Quer
     response->set_query_id(result.query_id);
     response->set_success(result.success);
     response->set_message(result.message);
+
+    // Set timing data
+    response->set_timing_data(result.timing_data);
     
     for (const auto& entry : result.results) {
         auto* grpc_entry = response->add_results();
