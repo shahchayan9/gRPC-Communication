@@ -322,6 +322,16 @@ void DataServiceImpl::convertToGrpc(const QueryResult& result, dataservice::Quer
         else if (std::holds_alternative<bool>(entry.value)) {
             grpc_entry->set_bool_value(std::get<bool>(entry.value));
         }
+        else if (std::holds_alternative<CrashData>(entry.value)) {
+            // Convert CrashData to a string representation or extract a relevant field
+            const CrashData& crash = std::get<CrashData>(entry.value);
+            // Include more crash info in a structured format
+            std::string crash_info = "Date: " + crash.crash_date + 
+                                   ", Time: " + crash.crash_time +
+                                   ", Borough: " + crash.borough + 
+                                   ", Killed: " + std::to_string(crash.persons_killed);
+            grpc_entry->set_string_value(crash_info);
+        }
         else if (std::holds_alternative<std::string>(entry.value)) {
             grpc_entry->set_string_value(std::get<std::string>(entry.value));
         }
