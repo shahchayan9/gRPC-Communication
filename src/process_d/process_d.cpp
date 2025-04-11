@@ -10,6 +10,7 @@
 #include "data/data_structures.h"
 #include "grpc/data_service.h"
 #include "shared_memory/shared_memory.h"
+#include "timing/timing.h"
 
 using namespace mini2;
 
@@ -36,7 +37,7 @@ public:
             data_store_->loadCrashDataFromCSV(data_file);
         } else {
             // Load default data path if exists
-            std::string default_path = "data/process_d/bronx_crashes.csv";
+            std::string default_path = "data/process_d/process3.csv";
             std::ifstream test_file(default_path);
             if (test_file.good()) {
                 test_file.close();
@@ -156,10 +157,16 @@ private:
         std::cout << "Process D received query: " << query.query_string;
         if (!query.parameters.empty()) {
             std::cout << " with parameters: ";
-            for (const auto& param : query.parameters) {
-                std::cout << param << " ";
-            }
+            for (size_t i = 0; i < query.parameters.size(); ++i) {
+                std::cout << query.parameters[i];
+                if (i < query.parameters.size() - 1) {
+                    std::cout << ", ";
+                }
+             }
         }
+               
+        // Start timing for this query
+        QueryTimer::getInstance().startTiming(query.id, "D");
         std::cout << std::endl;
         
         // Check cache first
@@ -171,6 +178,9 @@ private:
         std::vector<uint8_t> cached_data;
         
         if (cache_->get(cache_key, cached_data)) {
+            // Record cache hit timing
+            QueryTimer::getInstance().endTiming(query.id, "Cache_Access");
+     
             // Deserialize from cache
             std::string cache_str(cached_data.begin(), cached_data.end());
             QueryResult cached_result;
@@ -211,11 +221,18 @@ private:
             }
             
             std::cout << "Cache hit for query " << cache_key << std::endl;
+            // End total processing
+            QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+            
+            // Add timing to result
+            cached_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
             return cached_result;
         }
         
         // Process the query locally
         QueryResult local_result;
+
+        QueryTimer::getInstance().startTiming(query.id, "Local_Processing");
         
         // Process specific queries for crash data
         if (query.query_string == "get_by_borough") {
@@ -226,33 +243,46 @@ private:
                 // Not our borough, return empty result
                 local_result = QueryResult::createSuccess(query.id, {}, "No BRONX data requested");
             }
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
         }
         else if (query.query_string == "get_by_street" || 
                 query.query_string == "get_by_date_range" ||
                 query.query_string == "get_crashes_with_injuries" ||
-                query.query_string == "get_crashes_with_fatalities") {
+                query.query_string == "get_crashes_with_fatalities" || 
+                query.query_string == "get_by_time") {
             // Process these special queries locally
             local_result = data_store_->processQuery(query);
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
         }
         else {
             // Standard queries like get_all, get_by_key, get_by_prefix
             local_result = data_store_->processQuery(query);
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
         }
         
         // Forward to other servers if needed (except for borough-specific queries)
         if (query.query_string != "get_by_borough" && 
             (query.query_string == "get_all" || shouldForwardQuery(query))) {
-            
+            // Start downstream query timing
+            QueryTimer::getInstance().startTiming(query.id, "Downstream_Queries");
+             
             std::vector<QueryResult> downstream_results;
             
             for (const auto& [conn_id, client] : clients_) {
                 if (client->isConnected()) {
                     auto downstream_result = client->queryData(query);
                     if (downstream_result.success) {
+                        // Collect timing data from downstream
+                        if (!downstream_result.timing_data.empty()) {
+                            QueryTimer::getInstance().addDownstreamTiming(query.id, downstream_result.timing_data);
+                        }
+                        
                         downstream_results.push_back(downstream_result);
                     }
                 }
             }
+            // End downstream query timing
+            QueryTimer::getInstance().endTiming(query.id, "Downstream_Queries");
             
             // Add downstream results to local results
             for (const auto& result : downstream_results) {
@@ -267,6 +297,8 @@ private:
         }
         
         // Cache the result
+        QueryTimer::getInstance().startTiming(query.id, "Cache_Storage");
+
         if (local_result.success) {
             // Serialize to cache
             std::ostringstream oss;
@@ -297,6 +329,14 @@ private:
             // Cache for 5 seconds
             cache_->put(cache_key, cache_data, 5000);
         }
+        QueryTimer::getInstance().endTiming(query.id, "Cache_Storage");
+        
+        // End total processing timing
+        QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+        
+        // Add timing data to result
+        local_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
+         
         
         return local_result;
     }
@@ -308,7 +348,8 @@ private:
                query.query_string == "get_by_prefix" ||
                query.query_string == "get_by_date_range" ||
                query.query_string == "get_crashes_with_injuries" ||
-               query.query_string == "get_crashes_with_fatalities";
+               query.query_string == "get_crashes_with_fatalities" ||
+               query.query_string == "get_by_time" ;
     }
     
     void handleData(const std::string& source, 

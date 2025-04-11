@@ -199,6 +199,35 @@ QueryResult DataStore::processQuery(const Query& query) {
         
         return getCrashesWithFatalities(min_fatalities);
     }
+    else if (query.query_string == "get_by_time") {
+        // New handler for crash time queries
+        if (query.parameters.empty()) {
+            return QueryResult::createFailure(query.id, "No time provided for time query");
+        }
+    
+        // Extract the target hour from the query parameter
+        std::string target_time = query.parameters[0];
+        std::vector<DataEntry> results;
+        std::string target_hour = target_time.substr(0, target_time.find(':'));
+        
+        for (const auto& pair : data_) {
+            if (std::holds_alternative<CrashData>(pair.second.value)) {
+                const CrashData& crash = std::get<CrashData>(pair.second.value);
+    
+                // Extract the crash hour
+                std::string crash_hour = crash.crash_time.substr(0, crash.crash_time.find(':'));
+    
+                // Compare crash hour with the target hour
+                if (crash_hour == target_hour) {
+                    results.push_back(pair.second);
+                }
+            }
+        }
+    
+        return QueryResult::createSuccess(query.id, results,
+                                          "Found " + std::to_string(results.size()) +
+                                          " crashes at hour " + target_hour);
+    }
     
     return QueryResult::createFailure(query.id, "Unknown query: " + query.query_string);
 }
@@ -416,16 +445,22 @@ QueryResult DataStore::getCrashesWithInjuries(int min_injuries) {
 
 QueryResult DataStore::getCrashesWithFatalities(int min_fatalities) {
     std::vector<DataEntry> results;
+    std::cout << "Looking for crashes with at least " << min_fatalities << " fatalities" << std::endl;
     
     for (const auto& pair : data_) {
+        // Make sure we're checking CrashData entries
         if (std::holds_alternative<CrashData>(pair.second.value)) {
-            const CrashData& crash = std::get<CrashData>(pair.second.value);
-            
-            if (crash.persons_killed >= min_fatalities) {
+             const CrashData& crash = std::get<CrashData>(pair.second.value);
+             
+             if (crash.persons_killed >= min_fatalities) {
                 results.push_back(pair.second);
-            }
-        }
-    }
+                // Create a new DataEntry with the original CrashData
+                std::cout << "Found crash with " << crash.persons_killed << " fatalities at " 
+                          << crash.crash_time << " in " << crash.borough << std::endl;
+                results.push_back(pair.second);  // Add the original entry containing CrashData
+             }
+         }
+     }
     
     return QueryResult::createSuccess("fatalities_query", results, 
                                      "Found " + std::to_string(results.size()) + 

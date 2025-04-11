@@ -11,10 +11,10 @@ def parse_crash_data(input_file, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     
     # Define output files
-    brooklyn_file = os.path.join(output_dir, 'process_b', 'brooklyn_crashes.csv')
-    queens_file = os.path.join(output_dir, 'process_c', 'queens_crashes.csv')
-    bronx_file = os.path.join(output_dir, 'process_d', 'bronx_crashes.csv')
-    staten_island_file = os.path.join(output_dir, 'process_e', 'staten_island_crashes.csv')
+    brooklyn_file = os.path.join(output_dir, 'process_b', 'process1.csv')
+    queens_file = os.path.join(output_dir, 'process_c', 'process2.csv')
+    bronx_file = os.path.join(output_dir, 'process_d', 'process3.csv')
+    staten_island_file = os.path.join(output_dir, 'process_e', 'process4.csv')
     other_file = os.path.join(output_dir, 'process_e', 'other_crashes.csv')
     
     # Ensure subdirectories exist
