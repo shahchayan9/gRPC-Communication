@@ -94,6 +94,7 @@ struct QueryResult {
     bool success;
     std::string message;
     std::vector<DataEntry> results;
+    std::string timing_data;
     
     // Create a success result
     static QueryResult createSuccess(const std::string& query_id,
@@ -101,7 +102,7 @@ struct QueryResult {
                                     const std::string& message = "Success") {
         return {query_id, true, message, results};
     }
-    
+
     // Create a failure result
     static QueryResult createFailure(const std::string& query_id,
                                     const std::string& error_message) {

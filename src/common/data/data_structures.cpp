@@ -445,16 +445,22 @@ QueryResult DataStore::getCrashesWithInjuries(int min_injuries) {
 
 QueryResult DataStore::getCrashesWithFatalities(int min_fatalities) {
     std::vector<DataEntry> results;
+    std::cout << "Looking for crashes with at least " << min_fatalities << " fatalities" << std::endl;
     
     for (const auto& pair : data_) {
+        // Make sure we're checking CrashData entries
         if (std::holds_alternative<CrashData>(pair.second.value)) {
-            const CrashData& crash = std::get<CrashData>(pair.second.value);
-            
-            if (crash.persons_killed >= min_fatalities) {
+             const CrashData& crash = std::get<CrashData>(pair.second.value);
+             
+             if (crash.persons_killed >= min_fatalities) {
                 results.push_back(pair.second);
-            }
-        }
-    }
+                // Create a new DataEntry with the original CrashData
+                std::cout << "Found crash with " << crash.persons_killed << " fatalities at " 
+                          << crash.crash_time << " in " << crash.borough << std::endl;
+                results.push_back(pair.second);  // Add the original entry containing CrashData
+             }
+         }
+     }
     
     return QueryResult::createSuccess("fatalities_query", results, 
                                      "Found " + std::to_string(results.size()) + 

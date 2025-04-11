@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x64\x61ta_service.proto\x12\x0b\x64\x61taservice\"J\n\x0cQueryRequest\x12\x10\n\x08query_id\x18\x01 \x01(\t\x12\x14\n\x0cquery_string\x18\x02 \x01(\t\x12\x12\n\nparameters\x18\x03 \x03(\t\"l\n\rQueryResponse\x12\x10\n\x08query_id\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\'\n\x07results\x18\x04 \x03(\x0b\x32\x16.dataservice.DataEntry\"T\n\x0b\x44\x61taMessage\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"<\n\tDataChunk\x12\x10\n\x08\x63hunk_id\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0f\n\x07is_last\x18\x03 \x01(\x08\"|\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x16\n\x0cstring_value\x18\x02 \x01(\tH\x00\x12\x13\n\tint_value\x18\x03 \x01(\x05H\x00\x12\x16\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00\x12\x14\n\nbool_value\x18\x05 \x01(\x08H\x00\x42\x07\n\x05value\"\x07\n\x05\x45mpty2\xd4\x01\n\x0b\x44\x61taService\x12\x44\n\tQueryData\x12\x19.dataservice.QueryRequest\x1a\x1a.dataservice.QueryResponse\"\x00\x12:\n\x08SendData\x12\x18.dataservice.DataMessage\x1a\x12.dataservice.Empty\"\x00\x12\x43\n\nStreamData\x12\x19.dataservice.QueryRequest\x1a\x16.dataservice.DataChunk\"\x00\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x64\x61ta_service.proto\x12\x0b\x64\x61taservice\"J\n\x0cQueryRequest\x12\x10\n\x08query_id\x18\x01 \x01(\t\x12\x14\n\x0cquery_string\x18\x02 \x01(\t\x12\x12\n\nparameters\x18\x03 \x03(\t\"\x81\x01\n\rQueryResponse\x12\x10\n\x08query_id\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\'\n\x07results\x18\x04 \x03(\x0b\x32\x16.dataservice.DataEntry\x12\x13\n\x0btiming_data\x18\x05 \x01(\t\"T\n\x0b\x44\x61taMessage\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"<\n\tDataChunk\x12\x10\n\x08\x63hunk_id\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\x0f\n\x07is_last\x18\x03 \x01(\x08\"|\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x16\n\x0cstring_value\x18\x02 \x01(\tH\x00\x12\x13\n\tint_value\x18\x03 \x01(\x05H\x00\x12\x16\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00\x12\x14\n\nbool_value\x18\x05 \x01(\x08H\x00\x42\x07\n\x05value\"\x07\n\x05\x45mpty2\xd4\x01\n\x0b\x44\x61taService\x12\x44\n\tQueryData\x12\x19.dataservice.QueryRequest\x1a\x1a.dataservice.QueryResponse\"\x00\x12:\n\x08SendData\x12\x18.dataservice.DataMessage\x1a\x12.dataservice.Empty\"\x00\x12\x43\n\nStreamData\x12\x19.dataservice.QueryRequest\x1a\x16.dataservice.DataChunk\"\x00\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,16 +33,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_QUERYREQUEST']._serialized_start=35
   _globals['_QUERYREQUEST']._serialized_end=109
-  _globals['_QUERYRESPONSE']._serialized_start=111
-  _globals['_QUERYRESPONSE']._serialized_end=219
-  _globals['_DATAMESSAGE']._serialized_start=221
-  _globals['_DATAMESSAGE']._serialized_end=305
-  _globals['_DATACHUNK']._serialized_start=307
-  _globals['_DATACHUNK']._serialized_end=367
-  _globals['_DATAENTRY']._serialized_start=369
-  _globals['_DATAENTRY']._serialized_end=493
-  _globals['_EMPTY']._serialized_start=495
-  _globals['_EMPTY']._serialized_end=502
-  _globals['_DATASERVICE']._serialized_start=505
-  _globals['_DATASERVICE']._serialized_end=717
+  _globals['_QUERYRESPONSE']._serialized_start=112
+  _globals['_QUERYRESPONSE']._serialized_end=241
+  _globals['_DATAMESSAGE']._serialized_start=243
+  _globals['_DATAMESSAGE']._serialized_end=327
+  _globals['_DATACHUNK']._serialized_start=329
+  _globals['_DATACHUNK']._serialized_end=389
+  _globals['_DATAENTRY']._serialized_start=391
+  _globals['_DATAENTRY']._serialized_end=515
+  _globals['_EMPTY']._serialized_start=517
+  _globals['_EMPTY']._serialized_end=524
+  _globals['_DATASERVICE']._serialized_start=527
+  _globals['_DATASERVICE']._serialized_end=739
 # @@protoc_insertion_point(module_scope)
