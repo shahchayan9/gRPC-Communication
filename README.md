@@ -161,3 +161,30 @@ To verify that the system is working correctly:
 2. Use the Python client to query data.
 3. Check the logs of each process to see how queries are processed and forwarded.
 4. Verify that caching is working by sending the same query multiple times.
+
+---
+
+## 📌 Conclusion and Summary
+
+With this implementation, you now have a complete distributed system that demonstrates multi-process coordination with caching between processes using both gRPC and shared memory. The system includes:
+
+- Five processes (A, B, C, D, E) that form an overlay network  
+- A shared memory mechanism for caching between processes  
+- gRPC-based communication for remote procedure calls  
+- Python client for interacting with the system  
+
+### To deploy this system across your three Mac computers:
+
+1. Update the `config/network_config.json` file with the correct IP addresses for each Mac  
+2. Build the project on each Mac using the build script  
+3. Run the appropriate processes on each Mac:
+
+- **Mac 1**: Processes A and B  
+- **Mac 2**: Processes C and D  
+- **Mac 3**: Process E  
+
+4. Use the Python client to interact with the system
+
+This implementation demonstrates how to create a two-way communication system without relying solely on request-response style by utilizing the shared memory cache. Queries can be processed by retrieving results from the cache when available, avoiding the need for making additional network requests.
+
+This system provides a foundation for exploring more complex distributed systems with transactionless caching and advanced overlay configurations.
