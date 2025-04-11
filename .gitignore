@@ -1,2 +1,6 @@
 build
 .env
+data/process_b/process1.csv
+data/process_c/process2.csv
+data/process_d/process3.csv
+data/process_e/process4.csv
