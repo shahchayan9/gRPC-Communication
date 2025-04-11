@@ -180,11 +180,10 @@ With this implementation, you now have a complete distributed system that demons
 3. Run the appropriate processes on each Mac:
 
 - **Mac 1**: Processes A and B  
-- **Mac 2**: Processes C and D  
-- **Mac 3**: Process E  
+- **Mac 2**: Processes C, D and E
 
 4. Use the Python client to interact with the system
 
-This implementation demonstrates how to create a two-way communication system without relying solely on request-response style by utilizing the shared memory cache. Queries can be processed by retrieving results from the cache when available, avoiding the need for making additional network requests.
+This implementation demonstrates creating a two-way communication system without relying solely on request-response style by utilizing the shared memory cache. Queries can be processed by retrieving results from the cache when available, avoiding the need to make additional network requests.
 
 This system provides a foundation for exploring more complex distributed systems with transactionless caching and advanced overlay configurations.
