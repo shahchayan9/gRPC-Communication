@@ -58,8 +58,7 @@ cd mini2_project
 Edit `config/network_config.json` to match your network configuration. Replace the IP addresses with the actual IPs of your Mac systems:
 
 - **Mac 1**: Processes A and B  
-- **Mac 2**: Processes C and D  
-- **Mac 3**: Process E
+- **Mac 2**: Processes C, D and E
 
 ---
 
@@ -80,8 +79,7 @@ This will generate the Protocol Buffer code, configure CMake, and build the proj
 ### 🧩 Distribution of Processes
 
 - **Mac 1**: Processes A and B  
-- **Mac 2**: Processes C and D  
-- **Mac 3**: Process E
+- **Mac 2**: Processes C, D and E  
 
 ### ▶️ Starting Processes
 
@@ -103,11 +101,8 @@ This will generate the Protocol Buffer code, configure CMake, and build the proj
 
 # Terminal 2
 ./scripts/run_process_d.sh
-```
 
-**Mac 3:**
-
-```bash
+# Terminal 3
 ./scripts/run_process_e.sh
 ```
 
