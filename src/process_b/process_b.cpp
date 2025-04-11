@@ -127,13 +127,13 @@ private:
             crash.pedestrians = i % 2;
             
             // Generate a unique key for this crash
-            std::string key = "brooklyn_crash_" + std::to_string(i);
+            std::string key = "processB_" + std::to_string(i);
             
             // Store in data store
             data_store_->store(DataEntry::createCrashData(key, crash));
         }
         
-        std::cout << "Created 10 demo crash records for BROOKLYN" << std::endl;
+        std::cout << "Created 10 demo crash records for Process B" << std::endl;
     }
     
     void connectToDownstreamServers() {

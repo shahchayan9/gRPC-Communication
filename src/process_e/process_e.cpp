@@ -285,7 +285,7 @@ private:
             crash.persons_injured = i % 3;
             crash.persons_killed = (i % 4 == 0) ? 1 : 0;
             crash.pedestrians = i % 2;
-            std::string key = "staten_island_crash_" + std::to_string(i);
+            std::string key = "processE_" + std::to_string(i);
             data_store_->store(DataEntry::createCrashData(key, crash));
         }
 
@@ -308,7 +308,7 @@ private:
             data_store_->store(DataEntry::createCrashData(key, crash));
         }
 
-        std::cout << "Created 10 demo crash records (5 for STATEN ISLAND and 5 for other)" << std::endl;
+        std::cout << "Created 10 demo crash records Process E" << std::endl;
     }
 };
 

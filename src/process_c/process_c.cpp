@@ -102,10 +102,10 @@ private:
             crash.persons_injured = i % 2;
             crash.persons_killed = (i % 7 == 0) ? 1 : 0;
             crash.pedestrians = i % 3;
-            std::string key = "queens_crash_" + std::to_string(i);
+            std::string key = "processC_" + std::to_string(i);
             data_store_->store(DataEntry::createCrashData(key, crash));
         }
-        std::cout << "Created 10 demo crash records for QUEENS" << std::endl;
+        std::cout << "Created 10 demo crash records for Process C" << std::endl;
     }
 
     void connectToDownstreamServers() {

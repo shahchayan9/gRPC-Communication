@@ -23,9 +23,30 @@ struct CrashData {
     std::string on_street_name;
     std::string cross_street_name;
     std::string off_street_name;
+    
     int persons_injured;
     int persons_killed;
     int pedestrians;
+    int num_of_persons_injured;
+    int num_of_persons_killed;
+    int num_of_pedestrians_injured;
+    int num_of_pedestrians_killed;
+    int num_of_cyclists_injured;
+    int num_of_cyclists_killed;
+    int num_of_motorists_injured;
+    int num_of_motorists_killed;
+    
+    std::string contributing_factor_vehicle1;
+    std::string contributing_factor_vehicle2;
+    std::string contributing_factor_vehicle3;
+    std::string contributing_factor_vehicle4;
+    std::string contributing_factor_vehicle5;
+
+    std::string vehicle_type_code1;
+    std::string vehicle_type_code2;
+    std::string vehicle_type_code3;
+    std::string vehicle_type_code4;
+    std::string vehicle_type_code5;
     
     // Convert to string representation for easy serialization
     std::string toString() const;
