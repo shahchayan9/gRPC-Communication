@@ -41,7 +41,7 @@ public:
                 test_file.close();
                 data_store_->loadCrashDataFromCSV(default_path);
             } else {
-                loadDemoData();
+                std::cout << "Default data file not found at: " << default_path << ". No data loaded for Process C." << std::endl;
             }
         }
         
@@ -85,28 +85,6 @@ private:
     std::unordered_map<std::string, std::unique_ptr<DataServiceClient>> clients_;
     DataStore* data_store_;
     std::shared_ptr<SharedCache> cache_;
-
-    void loadDemoData() {
-        for (int i = 0; i < 10; ++i) {
-            CrashData crash;
-            crash.crash_date = "12/15/2021";
-            crash.crash_time = "9:" + std::to_string(i) + "0";
-            crash.borough = "QUEENS";
-            crash.zip_code = "11415";
-            crash.latitude = "40.7282";
-            crash.longitude = "-73.8331";
-            crash.location = "(40.7282, -73.8331)";
-            crash.on_street_name = "QUEENS BOULEVARD";
-            crash.cross_street_name = "MAIN STREET";
-            crash.off_street_name = "";
-            crash.persons_injured = i % 2;
-            crash.persons_killed = (i % 7 == 0) ? 1 : 0;
-            crash.pedestrians = i % 3;
-            std::string key = "queens_crash_" + std::to_string(i);
-            data_store_->store(DataEntry::createCrashData(key, crash));
-        }
-        std::cout << "Created 10 demo crash records for QUEENS" << std::endl;
-    }
 
     void connectToDownstreamServers() {
         for (const auto& conn_id : process_info_.connections) {
