@@ -121,7 +121,7 @@ def query_crashes_by_time(server_address, crash_time):
             'message': response.message,
             'execution_time': f"{(end_time - start_time):.3f} seconds",
             'result_count': len(results),
-            'results': results[:30]  # Only show first 20 results
+            'results': results[:20]  # Only show first 20 results
         }
         
     except grpc.RpcError as e:
