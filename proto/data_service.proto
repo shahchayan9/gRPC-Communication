@@ -26,6 +26,7 @@ message QueryResponse {
   bool success = 2;
   string message = 3;
   repeated DataEntry results = 4;
+  string timing_data = 5;
 }
 
 message DataMessage {

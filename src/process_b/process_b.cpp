@@ -4,11 +4,13 @@
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <iomanip>
 
 #include "config/config_loader.h"
 #include "data/data_structures.h"
 #include "grpc/data_service.h"
 #include "shared_memory/shared_memory.h"
+#include "timing/timing.h"
 
 using namespace mini2;
 
@@ -31,10 +33,19 @@ public:
         // Load data
         data_store_ = &DataStore::getInstance("process_b");
         if (!data_file.empty()) {
-            data_store_->loadFromFile(data_file);
+            // Load crash data from CSV
+            data_store_->loadCrashDataFromCSV(data_file);
         } else {
-            // Load some demo data
-            loadDemoData();
+            // Load default data path if exists
+            std::string default_path = "data/process_b/process1.csv";
+            std::ifstream test_file(default_path);
+            if (test_file.good()) {
+                test_file.close();
+                data_store_->loadCrashDataFromCSV(default_path);
+            } else {
+                // Load some demo data
+                loadDemoData();
+            }
         }
         
         // Create shared cache
@@ -98,18 +109,31 @@ private:
     std::shared_ptr<SharedCache> cache_;
     
     void loadDemoData() {
-        // Load some demo data for testing
-        data_store_->store(DataEntry::createInt("count_b_1", 42));
-        data_store_->store(DataEntry::createDouble("value_b_1", 3.14159));
-        data_store_->store(DataEntry::createString("name_b_1", "Process B Data"));
-        data_store_->store(DataEntry::createBool("flag_b_1", true));
-        
-        // More data
+        // Create demo crash data for BROOKLYN
         for (int i = 0; i < 10; ++i) {
-            data_store_->store(DataEntry::createInt("b_int_" + std::to_string(i), i * 10));
-            data_store_->store(DataEntry::createString("b_str_" + std::to_string(i), 
-                                                     "B_String_" + std::to_string(i)));
+            CrashData crash;
+            crash.crash_date = "12/14/2021";
+            crash.crash_time = "8:" + std::to_string(i) + "0";
+            crash.borough = "BROOKLYN";
+            crash.zip_code = "11211";
+            crash.latitude = "40.7128";
+            crash.longitude = "-73.9654";
+            crash.location = "(40.7128, -73.9654)";
+            crash.on_street_name = "BEDFORD AVENUE";
+            crash.cross_street_name = "GRAND STREET";
+            crash.off_street_name = "";
+            crash.persons_injured = i % 3;
+            crash.persons_killed = (i % 5 == 0) ? 1 : 0;
+            crash.pedestrians = i % 2;
+            
+            // Generate a unique key for this crash
+            std::string key = "brooklyn_crash_" + std::to_string(i);
+            
+            // Store in data store
+            data_store_->store(DataEntry::createCrashData(key, crash));
         }
+        
+        std::cout << "Created 10 demo crash records for BROOKLYN" << std::endl;
     }
     
     void connectToDownstreamServers() {
@@ -130,16 +154,42 @@ private:
     }
     
     QueryResult handleQuery(const Query& query) {
-        std::cout << "Process B received query: " << query.query_string << std::endl;
+        std::cout << "Process B received query: " << query.query_string;
+        if (!query.parameters.empty()) {
+            std::cout << " with parameters: ";
+            for (size_t i = 0; i < query.parameters.size(); ++i) {
+                std::cout << query.parameters[i];
+                if (i < query.parameters.size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+        }
+        
+        // Start timing for this query
+        QueryTimer::getInstance().startTiming(query.id, "B");
+        
+        std::cout << std::endl;
         
         // Check cache first
-        std::string cache_key = "query_" + query.id;
+        std::string cache_key = "query_" + query.query_string;
+        for (const auto& param : query.parameters) {
+            cache_key += "_" + param;
+        }
+        
         std::vector<uint8_t> cached_data;
         
         if (cache_->get(cache_key, cached_data)) {
+            
             // Deserialize from cache
             std::string cache_str(cached_data.begin(), cached_data.end());
             QueryResult cached_result;
+            
+            // Record cache hit timing
+            QueryTimer::getInstance().endTiming(query.id, "Cache_Access");
+            QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+            
+            // Add timing data to cached result
+            cached_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
             cached_result.query_id = query.id;
             cached_result.success = true;
             cached_result.message = "From cache";
@@ -176,30 +226,96 @@ private:
                 }
             }
             
-            std::cout << "Cache hit for query " << query.id << std::endl;
+            std::cout << "Cache hit for query " << cache_key << std::endl;
             return cached_result;
         }
         
         // Process the query locally
-        QueryResult local_result = data_store_->processQuery(query);
+        QueryResult local_result;
+
+        // Start local processing timing
+        QueryTimer::getInstance().startTiming(query.id, "Local_Processing");
         
-        // Forward to other servers if needed
-        if (query.query_string == "get_all" || shouldForwardQuery(query)) {
+        // Process specific queries for crash data
+        if (query.query_string == "get_by_borough") {
+            if (!query.parameters.empty() && query.parameters[0] == "BROOKLYN") {
+                // This is our borough, process locally
+                local_result = data_store_->getByBorough("BROOKLYN");
+                // Record local processing time
+                QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
+            } else {
+                // Not our borough, return empty result
+                local_result = QueryResult::createSuccess(query.id, {}, "No BROOKLYN data requested");
+            }
+        }
+        else if (query.query_string == "get_by_street" || 
+                query.query_string == "get_by_date_range" ||
+                query.query_string == "get_crashes_with_injuries" ||
+                query.query_string == "get_crashes_with_fatalities" ||
+                query.query_string == "get_by_time") {
+            // Process these special queries locally
+            local_result = data_store_->processQuery(query);
+            // Record local processing time
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
+        }
+        else {
+            // Standard queries like get_all, get_by_key, get_by_prefix
+            local_result = data_store_->processQuery(query);
+            // Record local processing time
+            QueryTimer::getInstance().endTiming(query.id, "Local_Processing");
+        }
+        
+        // Forward to other servers if needed (except for borough-specific queries)
+        if (query.query_string != "get_by_borough" && 
+            (query.query_string == "get_all" || shouldForwardQuery(query))) {
+            
+            // Start downstream query timing
+            QueryTimer::getInstance().startTiming(query.id, "Downstream_Queries");
+
+            std::vector<QueryResult> downstream_results;
+            
             for (const auto& [conn_id, client] : clients_) {
                 if (client->isConnected()) {
+                    std::cout << "connected. ";
+                    // Record timing for this specific downstream query
+                    QueryTimer::getInstance().startTiming(query.id, "Query_To_" + conn_id);
+
                     auto downstream_result = client->queryData(query);
+                    
+                    QueryTimer::getInstance().endTiming(query.id, "Query_To_" + conn_id);
+                    std::cout << "Got response. Success: " << (downstream_result.success ? "true" : "false")
+                             << ", Results: " << downstream_result.results.size() << std::endl;
                     if (downstream_result.success) {
-                        // Add downstream results to local results
-                        local_result.results.insert(local_result.results.end(),
-                                                 downstream_result.results.begin(),
-                                                 downstream_result.results.end());
+                        downstream_results.push_back(downstream_result);
                     }
                 }
             }
+            
+            // Add downstream results to local results
+            for (const auto& result : downstream_results) {
+                local_result.results.insert(local_result.results.end(),
+                                         result.results.begin(),
+                                         result.results.end());
+                 // Add downstream timing data
+                if (!result.timing_data.empty()) {
+                    QueryTimer::getInstance().addDownstreamTiming(query.id, result.timing_data);
+                }
+            }
+            
+            // Update message
+            local_result.message = "Combined results from Process B and " + 
+                                  std::to_string(downstream_results.size()) + " downstream processes";
+            // End downstream query timing
+            QueryTimer::getInstance().endTiming(query.id, "Downstream_Queries");
         }
         
         // Cache the result
-        if (local_result.success && !local_result.results.empty()) {
+        QueryTimer::getInstance().startTiming(query.id, "Cache_Storage");
+        
+        // End total processing timing
+        QueryTimer::getInstance().endTiming(query.id, "Total_Processing");
+       
+        if (local_result.success) {
             // Serialize to cache
             std::ostringstream oss;
             for (const auto& entry : local_result.results) {
@@ -217,6 +333,10 @@ private:
                 else if (std::holds_alternative<std::string>(entry.value)) {
                     oss << "string," << std::get<std::string>(entry.value) << std::endl;
                 }
+                else if (std::holds_alternative<CrashData>(entry.value)) {
+                    // For crash data, just store a placeholder in cache
+                    oss << "string," << "CrashData:" << entry.key << std::endl;
+                }
             }
             
             std::string cache_str = oss.str();
@@ -225,14 +345,24 @@ private:
             // Cache for 5 seconds
             cache_->put(cache_key, cache_data, 5000);
         }
+        QueryTimer::getInstance().endTiming(query.id, "Cache_Storage");
         
+        // Add timing data to result
+        local_result.timing_data = QueryTimer::getInstance().serializeTimingData(query.id);
+        
+      
         return local_result;
     }
     
     bool shouldForwardQuery(const Query& query) {
         // Determine if query should be forwarded based on content
-        return query.query_string == "get_by_prefix" ||
-               query.query_string == "get_by_key";
+        return query.query_string == "get_by_street" ||
+               query.query_string == "get_by_key" ||
+               query.query_string == "get_by_prefix" ||
+               query.query_string == "get_by_date_range" ||
+               query.query_string == "get_crashes_with_injuries" ||
+               query.query_string == "get_crashes_with_fatalities"||
+               query.query_string == "get_by_time";
     }
     
     void handleData(const std::string& source, 
