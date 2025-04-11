@@ -10,7 +10,7 @@
 #include "data/data_structures.h"
 #include "grpc/data_service.h"
 #include "shared_memory/shared_memory.h"
-+#include "timing/timing.h"
+#include "timing/timing.h"
 
 using namespace mini2;
 
